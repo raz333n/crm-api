@@ -21,7 +21,7 @@ userController.register = async (req, res) => {
             const hashPassword = await bcryptjs.hash(value.password, salt);
             user.password = hashPassword;
 
-            const usersCount = await User.countDocument();
+            const usersCount = await User.countDocuments();
             if(usersCount == 0){
                 user.role = 'admin'
             }
@@ -36,7 +36,7 @@ userController.register = async (req, res) => {
 
 userController.login = async (req, res) => {
     const body = req.body;
-    const {error, value} = userLoginValidationSchema.validate(body, {abortEarly: false});
+    const {error, value} = loginValidationSchema.validate(body, {abortEarly: false});
     if(error){
         res.status(400).json({error: error.details.map(err => err.message)});
     }
@@ -45,7 +45,7 @@ userController.login = async (req, res) => {
         return res.status(400).json({error : 'invalid email'});
     }
 
-    const isPasswordMatch = await bcryptjs.compaere(value.password, userPresent.password)
+    const isPasswordMatch = await bcryptjs.compare(value.password, userPresent.password)
     if(!isPasswordMatch){
         return res.status(400).json({error: "invalid password"});
     }
@@ -54,3 +54,6 @@ userController.login = async (req, res) => {
     const token = jwt.sign(tokenData, process.env.JWT_SECRET, {expiresIn: '7d'});
     res.json({token})
 }
+
+
+module.exports = userController
