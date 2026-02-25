@@ -1,8 +1,11 @@
 require('dotenv').config();
 
 const express = require('express');
+const http = require("http");
+const { Server } = require("socket.io");
 const configureDB = require('./config/db')
 const cors = require('cors')
+
 const userController = require("./app/controllers/user-controller")
 const leadController = require("./app/controllers/lead-controller");
 const authenticateUser = require("./app/middlewares/authenticate");
@@ -11,6 +14,23 @@ const authorizeUser = require("./app/middlewares/authorization");
 const port = process.env.PORT || 5000;
 
 const app = express();
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
+app.set("io", io);
 
 configureDB();
 
@@ -41,7 +61,8 @@ app.put('/api/leads/:id', authenticateUser, leadController.update);
 app.delete('/api/leads/:id', authenticateUser, leadController.remove);
 app.patch('/api/leads/:id/stage', authenticateUser, leadController.updateStage);
 app.get('/api/leads/pipeline/view', authenticateUser, leadController.pipelineView);
+app.patch('/api/leads/:id/move', authenticateUser, leadController.moveStage);
 
-app.listen(port, () => {
-    console.log("The server is running on port ", port);
-})
+server.listen(port, () => {
+  console.log("Server running on port", port);
+});

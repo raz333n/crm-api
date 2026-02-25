@@ -1,6 +1,16 @@
 const Lead = require("../models/lead-model");
 const { createLeadSchema, updateLeadSchema } = require("../validators/lead-validator");
 
+const allowedTransitions = {
+  new: ["contacted"],
+  contacted: ["qualified", "lost"],
+  qualified: ["proposal", "lost"],
+  proposal: ["negotiation", "lost"],
+  negotiation: ["won", "lost"],
+  won: [],
+  lost: []
+};
+
 const leadController = {};
 
 leadController.create = async (req, res) => {
@@ -13,6 +23,7 @@ leadController.create = async (req, res) => {
   try {
     const lead = await Lead.create({...value, createdBy: req.userId});
     res.status(201).json(lead);
+    io.emit("lead:created", lead);
   } catch (err) {
     res.status(500).json({ error: "Something went wrong" });
   }
@@ -151,6 +162,56 @@ leadController.pipelineView = async (req, res) => {
     });
 
     res.json(grouped);
+
+  } catch (err) {
+    res.status(500).json({ error: "Something went wrong" });
+  }
+};
+
+leadController.moveStage = async (req, res) => {
+  const { fromStage, toStage } = req.body;
+  const io = req.app.get("io");
+
+  if (!fromStage || !toStage) {
+    return res.status(400).json({ error: "Invalid stage data" });
+  }
+
+  if (!allowedTransitions[fromStage]?.includes(toStage)) {
+    return res.status(400).json({ error: "Invalid stage transition" });
+  }
+
+  try {
+    const query = {
+      _id: req.params.id,
+      stage: fromStage, // ensures no race condition
+    };
+
+    // Restrict sales
+    if (req.userRole === "sales") {
+      query.assignedTo = req.userId;
+    }
+
+    const updatedLead = await Lead.findOneAndUpdate(
+      query,
+      { stage: toStage },
+      { new: true }
+    ).lean();
+
+    if (!updatedLead) {
+      return res.status(404).json({ error: "Lead not found or stage mismatch" });
+    }
+
+    res.json({
+      message: "Stage moved successfully",
+      lead: updatedLead
+    });
+
+    io.emit("lead:stageMoved", {
+        leadId: updatedLead._id,
+        fromStage,
+        toStage,
+        lead: updatedLead,
+    });
 
   } catch (err) {
     res.status(500).json({ error: "Something went wrong" });
