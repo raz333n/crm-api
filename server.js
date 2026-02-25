@@ -10,6 +10,7 @@ const userController = require("./app/controllers/user-controller")
 const leadController = require("./app/controllers/lead-controller");
 const authenticateUser = require("./app/middlewares/authenticate");
 const authorizeUser = require("./app/middlewares/authorization");
+const activityController = require("../controllers/activity-controller");
 
 const port = process.env.PORT || 5000;
 
@@ -62,6 +63,15 @@ app.delete('/api/leads/:id', authenticateUser, leadController.remove);
 app.patch('/api/leads/:id/stage', authenticateUser, leadController.updateStage);
 app.get('/api/leads/pipeline/view', authenticateUser, leadController.pipelineView);
 app.patch('/api/leads/:id/move', authenticateUser, leadController.moveStage);
+
+//activity
+app.post("/api/activity",authenticateUser, activityController.create);
+app.get("/api/activity/calendar", authenticateUser, activityController.calendar);
+app.get("/api/activity/summary", activityController.summary);
+
+app.get("/api/activity/:id",authenticateUser, activityController.getOne);
+app.put("/api/activity/:id",authenticateUser, activityController.update);
+app.delete("/api/activity/:id",authenticateUser, activityController.delete);
 
 server.listen(port, () => {
   console.log("Server running on port", port);

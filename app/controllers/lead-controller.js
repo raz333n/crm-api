@@ -78,6 +78,8 @@ leadController.remove = async (req, res) => {
     await Lead.findByIdAndDelete(req.params.id);
 
     res.json({ message: "Lead deleted successfully" });
+
+    io.emit("lead:deleted", { leadId: req.params.id });
   } catch (err) {
     res.status(500).json({ error: "Something went wrong" });
   }
