@@ -39,7 +39,8 @@ app.post('/api/leads', authenticateUser, leadController.create);
 app.get('/api/leads', authenticateUser, authorizeUser(['manager']), leadController.list);
 app.put('/api/leads/:id', authenticateUser, leadController.update);
 app.delete('/api/leads/:id', authenticateUser, leadController.remove);
-app.patch('/api/leads/:id/stage', authenticateUser, leadController.updateStage)
+app.patch('/api/leads/:id/stage', authenticateUser, leadController.updateStage);
+app.get('/api/leads/pipeline/view', authenticateUser, leadController.pipelineView);
 
 app.listen(port, () => {
     console.log("The server is running on port ", port);

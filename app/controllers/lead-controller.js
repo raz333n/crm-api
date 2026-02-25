@@ -114,4 +114,47 @@ leadController.updateStage = async (req, res) => {
   }
 };
 
+leadController.pipelineView = async (req, res) => {
+  try {
+    const query = {};
+
+    // Restrict sales to their leads
+    if (req.userRole === "sales") {
+      query.assignedTo = req.userId;
+    }
+
+    const leads = await Lead.find(query)
+      .populate("assignedTo", "name email")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const stages = [
+      "new",
+      "contacted",
+      "qualified",
+      "proposal",
+      "negotiation",
+      "won",
+      "lost"
+    ];
+
+    const grouped = {};
+
+    // Initialize empty arrays
+    stages.forEach(stage => {
+      grouped[stage] = [];
+    });
+
+    // Group leads
+    leads.forEach(lead => {
+      grouped[lead.stage].push(lead);
+    });
+
+    res.json(grouped);
+
+  } catch (err) {
+    res.status(500).json({ error: "Something went wrong" });
+  }
+};
+
 module.exports = leadController;
