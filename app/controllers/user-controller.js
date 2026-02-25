@@ -55,5 +55,29 @@ userController.login = async (req, res) => {
     res.json({token})
 }
 
+userController.account = async (req, res) => {
+    const user = await User.findById(req.userId).select('-password');
+    res.status(200).json(user);
+}
+
+userController.list = async (req, res) => {
+    const all = await User.find();
+    res.status(200).json(all)
+}
+
+userController.remove = async (req, res) => {
+    const id = req.params.userId;
+    try{
+        if(id == req.userId){
+            return res.status(400).json({error : "Admin cannot delete his own account"})
+        }else{
+           const user =  await User.findByIdAndDelete(id);
+           res.json(user);
+        }
+    } catch (err){
+        res.status(500).json({error : "Something went wrong"})
+    }
+}
+
 
 module.exports = userController

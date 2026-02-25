@@ -13,10 +13,18 @@ const leadSchema = new mongoose.Schema(
       default: "other",
     },
 
-    status: {
-      type: String,
-      enum: ["new", "contacted", "qualified", "lost", "converted"],
-      default: "new",
+    stage: {
+        type: String,
+        enum: [
+            "new",
+            "contacted",
+            "qualified",
+            "proposal",
+            "negotiation",
+            "won",
+            "lost"
+        ],
+        default: "new"
     },
 
     assignedTo: {
